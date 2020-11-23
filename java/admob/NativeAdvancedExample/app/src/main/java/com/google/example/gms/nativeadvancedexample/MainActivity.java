@@ -16,6 +16,7 @@
 
 package com.google.example.gms.nativeadvancedexample;
 
+import android.os.Build;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import android.view.View;
@@ -199,31 +200,34 @@ public class MainActivity extends AppCompatActivity {
 
         AdLoader.Builder builder = new AdLoader.Builder(this, ADMOB_AD_UNIT_ID);
 
-        builder.forUnifiedNativeAd(new UnifiedNativeAd.OnUnifiedNativeAdLoadedListener() {
-            // OnUnifiedNativeAdLoadedListener implementation.
-            @Override
-            public void onUnifiedNativeAdLoaded(UnifiedNativeAd unifiedNativeAd) {
-                // If this callback occurs after the activity is destroyed, you must call
-                // destroy and return or you may get a memory leak.
-                if (isDestroyed()) {
-                    unifiedNativeAd.destroy();
-                    return;
-                }
-                // You must call destroy on old ads when you are done with them,
-                // otherwise you will have a memory leak.
-                if (nativeAd != null) {
-                    nativeAd.destroy();
-                }
-                nativeAd = unifiedNativeAd;
-                FrameLayout frameLayout =
-                        findViewById(R.id.fl_adplaceholder);
-                UnifiedNativeAdView adView = (UnifiedNativeAdView) getLayoutInflater()
-                        .inflate(R.layout.ad_unified, null);
-                populateUnifiedNativeAdView(unifiedNativeAd, adView);
-                frameLayout.removeAllViews();
-                frameLayout.addView(adView);
+    builder.forUnifiedNativeAd(
+        new UnifiedNativeAd.OnUnifiedNativeAdLoadedListener() {
+          // OnUnifiedNativeAdLoadedListener implementation.
+          @Override
+          public void onUnifiedNativeAdLoaded(UnifiedNativeAd unifiedNativeAd) {
+            // If this callback occurs after the activity is destroyed, you must call
+            // destroy and return or you may get a memory leak.
+            boolean isDestroyed = false;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+              isDestroyed = isDestroyed();
             }
-
+            if (isDestroyed || isFinishing() || isChangingConfigurations()) {
+              unifiedNativeAd.destroy();
+              return;
+            }
+            // You must call destroy on old ads when you are done with them,
+            // otherwise you will have a memory leak.
+            if (nativeAd != null) {
+              nativeAd.destroy();
+            }
+            nativeAd = unifiedNativeAd;
+            FrameLayout frameLayout = findViewById(R.id.fl_adplaceholder);
+            UnifiedNativeAdView adView =
+                (UnifiedNativeAdView) getLayoutInflater().inflate(R.layout.ad_unified, null);
+            populateUnifiedNativeAdView(unifiedNativeAd, adView);
+            frameLayout.removeAllViews();
+            frameLayout.addView(adView);
+          }
         });
 
         VideoOptions videoOptions = new VideoOptions.Builder()
